@@ -2,6 +2,7 @@
 set -e
 
 echo "==> Iniciando LinkStack (entorno local)..."
+echo "==> DB_HOST=${DB_HOST} DB_PORT=${DB_PORT}"
 
 # --- Permisos de escritura ---
 echo "==> Ajustando permisos..."
@@ -30,18 +31,14 @@ fi
 echo "==> Esperando conexion con MySQL (${DB_HOST}:${DB_PORT:-3306})..."
 MAX_TRIES=30
 COUNT=0
-until php -r "
-    try {
-        \$pdo = new PDO(
-            'mysql:host=${DB_HOST};port=${DB_PORT:-3306};dbname=${DB_DATABASE}',
-            '${DB_USERNAME}',
-            '${DB_PASSWORD}'
-        );
-        exit(0);
-    } catch (Exception \$e) {
-        exit(1);
-    }
-" 2>/dev/null; do
+until mysql --protocol=TCP \
+    --skip-ssl \
+    -h"${DB_HOST}" \
+    -P"${DB_PORT:-3306}" \
+    -u"${DB_USERNAME}" \
+    -p"${DB_PASSWORD}" \
+    -e "select 1" \
+    > /dev/null 2>&1; do
     COUNT=$((COUNT+1))
     if [ $COUNT -ge $MAX_TRIES ]; then
         echo "ERROR: MySQL no respondio despues de ${MAX_TRIES} intentos. Abortando."

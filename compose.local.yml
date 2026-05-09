@@ -8,6 +8,16 @@ services:
     container_name: linkstack_app
     restart: unless-stopped
     env_file: .env
+    # Los valores de conexion se declaran explicitamente para evitar
+    # problemas de CRLF/BOM en el env_file cuando se edita en Windows.
+    # Estos valores tienen prioridad sobre los del env_file.
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: linkstack
+      DB_USERNAME: linkstack
+      DB_PASSWORD: secret
     volumes:
       # Monta el proyecto completo para edicion en caliente
       - .:/var/www/html
@@ -52,7 +62,7 @@ services:
       --collation-server=utf8mb4_unicode_ci
       --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-psecret"]
+      test: ["CMD", "mysqladmin", "ping", "--ssl-mode=DISABLED", "-h", "127.0.0.1", "-uroot", "-psecret"]
       interval: 10s
       timeout: 5s
       retries: 10
