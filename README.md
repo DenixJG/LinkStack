@@ -14,7 +14,6 @@
 <br>
 
 <p align="center">
-  <p>Hola caracolas</p>
   <a href="#Function">Function</a> •
   <a href="#About">About</a> •
   <a href="#Instances">Instances</a> •
