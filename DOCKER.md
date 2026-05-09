@@ -5,7 +5,7 @@ local de LinkStack usando Docker y `compose.local.yml`.
 
 ## Requisitos previos
 
-- Windows 10/11 con Docker Desktop instalado y en ejecucion
+- Docker y Docker Compose instalados y en ejecucion
 - Git (para clonar el repositorio)
 - No es necesario tener PHP, Composer ni Node.js instalados en el host
 
@@ -45,8 +45,8 @@ URLs disponibles una vez levantado el entorno:
 
 ### 1. Copiar el archivo de entorno
 
-```powershell
-Copy-Item .env.docker .env
+```bash
+cp .env.docker .env
 ```
 
 Edita `.env` si necesitas cambiar valores (app key, nombre de la BD, etc.).
@@ -57,13 +57,13 @@ El campo `APP_KEY` se genera automaticamente en el primer arranque.
 La primera vez descarga dependencias del sistema, Composer y Node.js.
 Puede tardar entre 3 y 8 minutos segun la conexion.
 
-```powershell
+```bash
 docker compose -f compose.local.yml build
 ```
 
 ### 3. Levantar todos los servicios
 
-```powershell
+```bash
 docker compose -f compose.local.yml up -d
 ```
 
@@ -78,14 +78,14 @@ El contenedor `app` ejecuta automaticamente al iniciarse:
 
 ### 4. Verificar que todo este corriendo
 
-```powershell
+```bash
 docker compose -f compose.local.yml ps
 ```
 
 Todos los servicios deben aparecer con estado `running`.
 Para ver los logs del arranque de la aplicacion:
 
-```powershell
+```bash
 docker compose -f compose.local.yml logs -f app
 ```
 
@@ -95,19 +95,19 @@ docker compose -f compose.local.yml logs -f app
 
 ### Iniciar los servicios
 
-```powershell
+```bash
 docker compose -f compose.local.yml up -d
 ```
 
 ### Detener los servicios (mantiene los datos)
 
-```powershell
+```bash
 docker compose -f compose.local.yml down
 ```
 
 ### Ver logs en tiempo real
 
-```powershell
+```bash
 # Todos los servicios
 docker compose -f compose.local.yml logs -f
 
@@ -124,7 +124,7 @@ docker compose -f compose.local.yml logs -f nginx
 
 Todos los comandos de Artisan se ejecutan dentro del contenedor `app`:
 
-```powershell
+```bash
 # Forma general
 docker compose -f compose.local.yml exec app php artisan <comando>
 
@@ -144,7 +144,7 @@ docker compose -f compose.local.yml exec app php artisan tinker
 El contenedor `app` incluye Node.js 20 y npm. Los assets se compilan dentro
 del contenedor para evitar incompatibilidades entre el host Windows y Linux.
 
-```powershell
+```bash
 # Instalar dependencias npm (solo la primera vez o al cambiar package.json)
 docker compose -f compose.local.yml exec app npm install
 
@@ -159,7 +159,7 @@ docker compose -f compose.local.yml exec app npm run watch
 
 ## Abrir una shell en el contenedor
 
-```powershell
+```bash
 docker compose -f compose.local.yml exec app bash
 ```
 
@@ -186,13 +186,13 @@ Usa `localhost:3306` con el usuario y password de la tabla anterior.
 
 ### Acceder via consola MySQL dentro del contenedor
 
-```powershell
+```bash
 docker compose -f compose.local.yml exec mysql mysql -u linkstack -psecret linkstack
 ```
 
 ### Recrear la base de datos desde cero
 
-```powershell
+```bash
 # Elimina el volumen y re-ejecuta las migraciones
 docker compose -f compose.local.yml down -v
 docker compose -f compose.local.yml up -d
@@ -225,7 +225,7 @@ REDIS_PORT=6379
 
 Luego limpia la cache:
 
-```powershell
+```bash
 docker compose -f compose.local.yml exec app php artisan cache:clear
 docker compose -f compose.local.yml exec app php artisan config:clear
 ```
@@ -237,7 +237,7 @@ docker compose -f compose.local.yml exec app php artisan config:clear
 Necesario cuando cambias el `Dockerfile`, instalas nuevas extensiones PHP o
 actualizas dependencias del sistema:
 
-```powershell
+```bash
 docker compose -f compose.local.yml build --no-cache
 docker compose -f compose.local.yml up -d
 ```
@@ -250,13 +250,13 @@ docker compose -f compose.local.yml up -d
 
 Espera a que el entrypoint termine. Revisa los logs:
 
-```powershell
+```bash
 docker compose -f compose.local.yml logs -f app
 ```
 
 Si el problema persiste, regenera la key y limpia cache:
 
-```powershell
+```bash
 docker compose -f compose.local.yml exec app php artisan key:generate
 docker compose -f compose.local.yml exec app php artisan config:clear
 docker compose -f compose.local.yml exec app php artisan cache:clear
@@ -268,13 +268,13 @@ El entrypoint espera hasta 60 segundos. Si MySQL sigue sin responder,
 aumenta `start_period` en el healthcheck de `compose.local.yml` o revisa
 si hay otro proceso usando el puerto 3306 en el host:
 
-```powershell
-netstat -ano | findstr :3306
+```bash
+ss -tlnp | grep :3306
 ```
 
 ### Permisos denegados en storage/
 
-```powershell
+```bash
 docker compose -f compose.local.yml exec app chmod -R 775 storage bootstrap/cache
 docker compose -f compose.local.yml exec app chown -R www-data:www-data storage bootstrap/cache
 ```
@@ -283,7 +283,7 @@ docker compose -f compose.local.yml exec app chown -R www-data:www-data storage 
 
 Usa el modo polling en lugar del watcher de sistema de archivos:
 
-```powershell
+```bash
 docker compose -f compose.local.yml exec app npm run watch-poll
 ```
 
@@ -294,6 +294,6 @@ docker compose -f compose.local.yml exec app npm run watch-poll
 Elimina contenedores, imagenes creadas localmente y el volumen de MySQL.
 **Los datos de la base de datos se pierden.**
 
-```powershell
+```bash
 docker compose -f compose.local.yml down -v --rmi local
 ```
