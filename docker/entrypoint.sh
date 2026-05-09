@@ -8,8 +8,14 @@ echo "==> Ajustando permisos..."
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
-# --- Composer install si no existe vendor ---
+# --- Composer: install si vendor existe y el lock esta OK, update si no ---
 if [ ! -d "vendor" ] || [ ! -f "vendor/autoload.php" ]; then
+    echo "==> Ejecutando composer update (vendor ausente)..."
+    composer update --no-interaction --prefer-dist
+elif ! composer install --no-interaction --prefer-dist --dry-run > /dev/null 2>&1; then
+    echo "==> Lock file desincronizado, ejecutando composer update..."
+    composer update --no-interaction --prefer-dist
+else
     echo "==> Ejecutando composer install..."
     composer install --no-interaction --prefer-dist
 fi
