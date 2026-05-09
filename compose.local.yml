@@ -1,0 +1,90 @@
+services:
+
+  # ── PHP-FPM (Laravel) ──────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: linkstack_app
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Monta el proyecto completo para edicion en caliente
+      - .:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - linkstack
+
+  # ── Nginx (web server) ─────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: linkstack_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - linkstack
+
+  # ── MySQL 8.0 ──────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: linkstack_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: linkstack
+      MYSQL_USER: linkstack
+      MYSQL_PASSWORD: secret
+    ports:
+      # Expuesto al host para conectarte con DBeaver, TablePlus, etc.
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-psecret"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - linkstack
+
+  # ── Redis (cache / sesiones opcionales) ───────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: linkstack_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - linkstack
+
+  # ── Mailhog (captura de emails en desarrollo) ─────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: linkstack_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # UI web -> http://localhost:8025
+    networks:
+      - linkstack
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  linkstack:
+    driver: bridge
